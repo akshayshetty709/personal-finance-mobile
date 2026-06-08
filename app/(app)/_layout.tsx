@@ -15,6 +15,9 @@ export default function AppTabsLayout() {
         name="dashboard"
         options={{
           title: 'Dashboard',
+          // The screen renders its own header (with the alerts badge), so hide
+          // the native one to avoid a duplicate title.
+          headerShown: false,
           tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" color={color} size={size} />,
         }}
       />

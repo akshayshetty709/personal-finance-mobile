@@ -58,7 +58,22 @@ Path alias: `@/*` maps to the project root, so import as `@/src/...`.
     login bad password -> 403; register duplicate -> 409.
 - Login/Register screens are real (validation, loading-disabled button, error
   states, keyboard handling) and use shared FormInput + PrimaryButton components.
-- Tab screens (Dashboard, Transactions, Budgets, Alerts) are still placeholders.
+- DASHBOARD built (src/screens/DashboardScreen.tsx): Net Worth, This Month
+  (income/expenses/net), Budget Health (progress bars, green/amber/red), AI
+  Spending Summary (skeleton while loading, "Insights unavailable" on error),
+  and an unread-alerts badge. Each section is an independent component using
+  useApi (data/loading/error) + useFocusEffect (refetch on tab focus).
+  - Services: accountService, transactionService, budgetService, aiService,
+    alertService. Reusable: components/{Card,ProgressBar,Skeleton}, hooks/useApi,
+    utils/{dates,format,finance}.
+  - VERIFIED dashboard shapes: accounts [{id,name,type,balance}]; transactions
+    [{id,accountId,amount,type:INCOME|EXPENSE,category,description,date}] via
+    ?startDate&endDate; budgets [{id,category,limitAmount,spentAmount,month,year}];
+    ai {summary}.
+  - KNOWN BACKEND BUGS: GET /api/budgets/status and GET /api/alerts/count return
+    500 (even with data). Services fall back to GET /api/budgets and
+    GET /api/alerts respectively (marked FIXME(backend)); remove once fixed.
+- Remaining tab screens (Transactions, Budgets, Alerts) are still placeholders.
 
 ## API Base URL
 Dev: auto-detected LAN host (so physical devices reach the local server)

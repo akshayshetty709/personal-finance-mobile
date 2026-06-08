@@ -28,3 +28,45 @@ export interface RegisterRequest {
   email: string;
   password: string;
 }
+
+// ─── Dashboard domain (shapes VERIFIED against the running API) ──────────────
+
+export interface Account {
+  id: string;
+  name: string;
+  type: string;
+  balance: number;
+}
+
+export type TransactionType = 'INCOME' | 'EXPENSE';
+
+export interface Transaction {
+  id: string;
+  accountId: string;
+  amount: number;
+  type: TransactionType;
+  category: string;
+  description: string;
+  date: string; // YYYY-MM-DD
+}
+
+/** From /api/budgets/status (falls back to /api/budgets — same shape). */
+export interface BudgetStatus {
+  id: string;
+  category: string;
+  limitAmount: number;
+  spentAmount: number;
+  month: number;
+  year: number;
+}
+
+export interface SpendingSummary {
+  summary: string;
+}
+
+/** Computed client-side from this month's transactions. */
+export interface MonthSummary {
+  income: number;
+  expenses: number;
+  net: number;
+}
