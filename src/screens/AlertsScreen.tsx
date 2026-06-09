@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert as NativeAlert,
@@ -55,22 +55,25 @@ export default function AlertsScreen() {
     }, [load]),
   );
 
-  async function handleRead(alert: Alert) {
-    if (alert.isRead) return;
-    // Optimistic: flip the row to read immediately.
-    setAlerts((cur) => cur?.map((a) => (a.id === alert.id ? { ...a, isRead: true } : a)) ?? cur);
-    try {
-      const updated = await alertService.markRead(alert.id);
-      // Reconcile with the server's version of the row.
-      setAlerts((cur) => cur?.map((a) => (a.id === updated.id ? updated : a)) ?? cur);
-      void refreshBadge();
-      // On the UNREAD tab the row should drop out of the list.
-      if (tab === 'UNREAD') void load();
-    } catch {
-      setAlerts((cur) => cur?.map((a) => (a.id === alert.id ? { ...a, isRead: false } : a)) ?? cur);
-      NativeAlert.alert('Error', 'Could not mark the alert as read.');
-    }
-  }
+  const handleRead = useCallback(
+    async (alert: Alert) => {
+      if (alert.isRead) return;
+      // Optimistic: flip the row to read immediately.
+      setAlerts((cur) => cur?.map((a) => (a.id === alert.id ? { ...a, isRead: true } : a)) ?? cur);
+      try {
+        const updated = await alertService.markRead(alert.id);
+        // Reconcile with the server's version of the row.
+        setAlerts((cur) => cur?.map((a) => (a.id === updated.id ? updated : a)) ?? cur);
+        void refreshBadge();
+        // On the UNREAD tab the row should drop out of the list.
+        if (tab === 'UNREAD') void load();
+      } catch {
+        setAlerts((cur) => cur?.map((a) => (a.id === alert.id ? { ...a, isRead: false } : a)) ?? cur);
+        NativeAlert.alert('Error', 'Could not mark the alert as read.');
+      }
+    },
+    [tab, load, refreshBadge],
+  );
 
   async function handleMarkAll() {
     try {
@@ -109,7 +112,7 @@ export default function AlertsScreen() {
           data={alerts ?? []}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => <AlertRow alert={item} onPress={() => handleRead(item)} />}
+          renderItem={({ item }) => <AlertRow alert={item} onPress={handleRead} />}
           ListEmptyComponent={<Text style={[styles.muted, { color: colors.text }]}>No alerts</Text>}
         />
       )}
@@ -117,7 +120,7 @@ export default function AlertsScreen() {
   );
 }
 
-function AlertRow({ alert, onPress }: { alert: Alert; onPress: () => void }) {
+function AlertRowImpl({ alert, onPress }: { alert: Alert; onPress: (alert: Alert) => void }) {
   const scheme = useColorScheme();
   const colors = Colors[scheme];
   const visual = ALERT_VISUAL[alert.alertType];
@@ -126,7 +129,7 @@ function AlertRow({ alert, onPress }: { alert: Alert; onPress: () => void }) {
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => onPress(alert)}
       style={[styles.row, { backgroundColor: alert.isRead ? surface : unreadBg }]}>
       <View style={[styles.iconCircle, { backgroundColor: `${visual.color}22` }]}>
         <Ionicons name={visual.icon} size={20} color={visual.color} />
@@ -146,6 +149,9 @@ function AlertRow({ alert, onPress }: { alert: Alert; onPress: () => void }) {
     </Pressable>
   );
 }
+
+// memo: rows skip re-render unless their `alert`/`onPress` props change.
+const AlertRow = memo(AlertRowImpl);
 
 const styles = StyleSheet.create({
   header: {

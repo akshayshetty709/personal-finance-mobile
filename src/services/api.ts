@@ -69,15 +69,28 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): voi
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Don't fire on the login/register calls themselves (they legitimately
-    // return auth errors); only on already-authenticated requests.
+    // This backend returns 403 (not 401) when the JWT is missing/invalid/expired.
+    // The token expires after 24h, so this happens in normal use — handle it once
+    // here: clear the session, and the nav gate falls back to Login automatically.
+    // Exclude /api/auth/* so a wrong-password login (also 403) doesn't "log out".
     const isAuthEndpoint = error.config?.url?.includes('/api/auth/') ?? false;
-    if (axios.isAxiosError(error) && error.response?.status === 401 && !isAuthEndpoint) {
-      onUnauthorized?.(); // clears the session -> nav gate falls back to login
+    if (axios.isAxiosError(error) && error.response?.status === 403 && !isAuthEndpoint) {
+      onUnauthorized?.();
     }
     return Promise.reject(error);
   },
 );
+
+// Public, unauthenticated reachability check (GET /api/health is the only public
+// endpoint). Used to tell "device offline" from "backend down".
+export async function checkHealth(): Promise<boolean> {
+  try {
+    await api.get('/api/health', { timeout: 4000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // Extract a user-facing message from a failed request. The API returns errors as
 // { status, message, timestamp }, so we surface `message` (e.g. the 409 "budget

@@ -1,17 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { View } from 'react-native';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
+import OfflineBanner from '@/src/components/OfflineBanner';
 import { UnreadAlertsProvider, useUnreadAlerts } from '@/src/context/UnreadAlertsContext';
 
 // AppStack — shown only when logged in (gated in app/_layout.tsx).
 // The unread-alerts count lives in a provider ABOVE the tab navigator so the
 // Alerts tab badge (and the Dashboard badge) can read it and stay in sync.
+// The OfflineBanner sits above the tabs so it's visible on every screen.
 export default function AppTabsLayout() {
   return (
     <UnreadAlertsProvider>
-      <AppTabs />
+      <View style={{ flex: 1 }}>
+        <OfflineBanner />
+        <AppTabs />
+      </View>
     </UnreadAlertsProvider>
   );
 }

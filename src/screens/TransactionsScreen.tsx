@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -14,6 +14,7 @@ import {
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import DateField from '@/src/components/DateField';
+import ErrorState from '@/src/components/ErrorState';
 import SegmentedControl from '@/src/components/SegmentedControl';
 import SwipeableRow from '@/src/components/SwipeableRow';
 import TransactionFormSheet from '@/src/components/TransactionFormSheet';
@@ -72,20 +73,22 @@ export default function TransactionsScreen() {
     }, [load]),
   );
 
-  const handleDelete = useCallback(
-    async (id: string) => {
-      const previous = transactions;
-      // Optimistic removal so the row disappears immediately.
-      setTransactions((current) => current?.filter((t) => t.id !== id) ?? current);
-      try {
-        await transactionService.deleteTransaction(id);
-      } catch {
-        setTransactions(previous); // roll back on failure
-        Alert.alert('Delete failed', 'Could not delete that transaction. Please try again.');
-      }
-    },
-    [transactions],
-  );
+  const handleDelete = useCallback(async (id: string) => {
+    // Capture the pre-delete list via the updater so this callback has NO
+    // `transactions` dependency — staying stable lets the memoized rows skip
+    // re-rendering when an unrelated piece of state changes.
+    let snapshot: Transaction[] | null = null;
+    setTransactions((current) => {
+      snapshot = current;
+      return current?.filter((t) => t.id !== id) ?? current;
+    });
+    try {
+      await transactionService.deleteTransaction(id);
+    } catch {
+      setTransactions(snapshot); // roll back on failure
+      Alert.alert('Delete failed', 'Could not delete that transaction. Please try again.');
+    }
+  }, []);
 
   const categories = useMemo(() => distinctCategories(transactions ?? []), [transactions]);
   const sections = useMemo(
@@ -122,6 +125,8 @@ export default function TransactionsScreen() {
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.tint} />
         </View>
+      ) : error ? (
+        <ErrorState message={error} onRetry={() => void load()} center />
       ) : (
         <SectionList
           sections={sections}
@@ -134,16 +139,12 @@ export default function TransactionsScreen() {
             </Text>
           )}
           renderItem={({ item }) => (
-            <TransactionRow txn={item} onDelete={() => handleDelete(item.id)} />
+            <TransactionRow txn={item} onDelete={handleDelete} />
           )}
           ListEmptyComponent={
-            error ? (
-              <Text style={styles.error}>{error}</Text>
-            ) : (
-              <Text style={[styles.muted, { color: colors.text }]}>
-                No transactions match these filters.
-              </Text>
-            )
+            <Text style={[styles.muted, { color: colors.text }]}>
+              No transactions match these filters.
+            </Text>
           }
         />
       )}
@@ -181,7 +182,7 @@ function CategoryChip({ label, active, onPress }: { label: string; active: boole
   );
 }
 
-function TransactionRow({ txn, onDelete }: { txn: Transaction; onDelete: () => void }) {
+function TransactionRowImpl({ txn, onDelete }: { txn: Transaction; onDelete: (id: string) => void }) {
   const scheme = useColorScheme();
   const colors = Colors[scheme];
   const surface = scheme === 'dark' ? '#1c1c1e' : '#ffffff';
@@ -190,7 +191,7 @@ function TransactionRow({ txn, onDelete }: { txn: Transaction; onDelete: () => v
   const amountColor = income ? '#34c759' : '#ff3b30';
 
   return (
-    <SwipeableRow onDelete={onDelete}>
+    <SwipeableRow onDelete={() => onDelete(txn.id)}>
       <View style={[styles.row, { backgroundColor: surface }]}>
         <View style={[styles.iconCircle, { backgroundColor: iconBg }]}>
           <Ionicons name={categoryIcon(txn.category)} size={20} color={colors.text} />
@@ -209,6 +210,9 @@ function TransactionRow({ txn, onDelete }: { txn: Transaction; onDelete: () => v
     </SwipeableRow>
   );
 }
+
+// memo: rows skip re-render unless their `txn`/`onDelete` props change.
+const TransactionRow = memo(TransactionRowImpl);
 
 const styles = StyleSheet.create({
   filterBar: {

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "personal-finance-mobile",
+    "name": "Personal Finance",
     "slug": "personal-finance-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,9 +8,11 @@
     "scheme": "personalfinancemobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.financetracker.app"
     },
     "android": {
+      "package": "com.financetracker.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -31,7 +33,7 @@
         {
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#2f95dc"
         }
       ],
       "@react-native-community/datetimepicker"

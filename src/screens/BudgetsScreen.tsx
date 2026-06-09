@@ -15,6 +15,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import BudgetFormSheet from '@/src/components/BudgetFormSheet';
 import Card from '@/src/components/Card';
+import ErrorState from '@/src/components/ErrorState';
 import MarkdownText from '@/src/components/MarkdownText';
 import ProgressBar from '@/src/components/ProgressBar';
 import Skeleton from '@/src/components/Skeleton';
@@ -109,7 +110,7 @@ export default function BudgetsScreen() {
             <SkeletonCard />
           </>
         ) : error ? (
-          <Text style={styles.error}>{error}</Text>
+          <ErrorState message={error} onRetry={() => void load()} />
         ) : budgets && budgets.length === 0 ? (
           <Text style={[styles.muted, { color: colors.text }]}>No budgets for {label}.</Text>
         ) : (

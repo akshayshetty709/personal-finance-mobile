@@ -45,8 +45,11 @@ Path alias: `@/*` maps to the project root, so import as `@/src/...`.
   - src/services/api.ts — shared axios client.
     - baseURL: EXPO_PUBLIC_API_URL (.env) > dev LAN auto-detect (Expo hostUri) > prod default.
     - request interceptor attaches the JWT.
-    - response interceptor: 401 on a protected request -> clears session via a
-      handler registered by AuthContext (setUnauthorizedHandler) -> nav falls back to login.
+    - response interceptor: 403 on a protected request (this backend returns 403,
+      not 401, for missing/invalid/EXPIRED tokens — JWT expires after 24h) ->
+      clears session via a handler registered by AuthContext
+      (setUnauthorizedHandler) -> nav falls back to login. Excludes /api/auth/*.
+    - checkHealth() pings the public GET /api/health (the only no-token endpoint).
     - getApiErrorMessage(error, fallback) helper: extracts the API's { message }
       from an error body (e.g. 409/400) for user-facing messages.
   - src/services/authService.ts — POST /api/auth/login and /api/auth/register,
@@ -155,6 +158,22 @@ Path alias: `@/*` maps to the project root, so import as `@/src/...`.
     "Updated HH:MM" (useApi now tracks lastUpdated = Date.now() on success);
     anomalies use per-row createdAt. Skeleton on first load; cached text stays
     visible during refresh.
+- STEP 10 polish/deploy prep:
+  - Env: .env.development / .env.production with EXPO_PUBLIC_API_URL (Expo's
+    native env loading — NOT react-native-dotenv, which conflicts with
+    babel-preset-expo). Dev leaves it unset so api.ts auto-detects the LAN host.
+  - Global auth: 403 interceptor (above) handles 24h token expiry centrally.
+  - Error states: reusable src/components/ErrorState (message + Retry) wired into
+    Dashboard cards, Transactions, Accounts, Budgets (Alerts/Insights already had
+    retry). AI cards do NOT treat 200-fallback text as an error.
+  - Offline: @react-native-community/netinfo + src/hooks/useNetworkStatus +
+    src/components/OfflineBanner (mounted above the tabs). Banner = DEVICE offline;
+    server errors while online are the per-screen ErrorState (distinct problems).
+  - app.json: name "Personal Finance"; ios.bundleIdentifier/android.package
+    com.financetracker.app; splash backgroundColor #2f95dc.
+  - Perf: React.memo on ProgressBar, Skeleton, and the list rows
+    (Account/Transaction/Alert) with stable useCallback handlers (rows take the
+    item/id so memo actually skips re-renders).
 
 ## API Base URL
 Dev: auto-detected LAN host (so physical devices reach the local server)

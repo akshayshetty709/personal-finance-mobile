@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import AccountFormModal from '@/src/components/AccountFormModal';
+import ErrorState from '@/src/components/ErrorState';
 import { accountService } from '@/src/services/accountService';
 import type { Account } from '@/src/types';
 import { formatCurrency } from '@/src/utils/format';
@@ -64,10 +65,11 @@ export default function AccountsScreen() {
     setModalVisible(true);
   }
 
-  function openEdit(account: Account) {
+  // Stable so the memoized AccountRow doesn't re-render on every parent render.
+  const openEdit = useCallback((account: Account) => {
     setEditing(account);
     setModalVisible(true);
-  }
+  }, []);
 
   function onSaved() {
     setModalVisible(false);
@@ -108,14 +110,14 @@ export default function AccountsScreen() {
         contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 12 }]}
         ListHeaderComponent={header}
         renderItem={({ item }) => (
-          <AccountRow account={item} onPress={() => openEdit(item)} />
+          <AccountRow account={item} onPress={openEdit} />
         )}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.tint} />
         }
         ListEmptyComponent={
           error ? (
-            <Text style={styles.error}>{error}</Text>
+            <ErrorState message={error} onRetry={() => void load()} />
           ) : (
             <Text style={[styles.muted, { color: colors.text }]}>
               No accounts yet. Tap “Add” to create one.
@@ -134,7 +136,7 @@ export default function AccountsScreen() {
   );
 }
 
-function AccountRow({ account, onPress }: { account: Account; onPress: () => void }) {
+function AccountRowImpl({ account, onPress }: { account: Account; onPress: (account: Account) => void }) {
   const scheme = useColorScheme();
   const colors = Colors[scheme];
   const surface = scheme === 'dark' ? '#1c1c1e' : '#ffffff';
@@ -142,7 +144,7 @@ function AccountRow({ account, onPress }: { account: Account; onPress: () => voi
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => onPress(account)}
       style={({ pressed }) => [styles.row, { backgroundColor: surface }, pressed && styles.rowPressed]}>
       <View style={styles.rowLeft}>
         <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
@@ -154,6 +156,9 @@ function AccountRow({ account, onPress }: { account: Account; onPress: () => voi
     </Pressable>
   );
 }
+
+// memo: list rows skip re-render when their `account`/`onPress` props are unchanged.
+const AccountRow = memo(AccountRowImpl);
 
 const styles = StyleSheet.create({
   center: {

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { Animated, type DimensionValue, type StyleProp, type ViewStyle } from 'react-native';
 
 import { useColorScheme } from '@/components/useColorScheme';
@@ -11,7 +11,7 @@ type SkeletonProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-export default function Skeleton({ width = '100%', height = 16, style }: SkeletonProps) {
+function Skeleton({ width = '100%', height = 16, style }: SkeletonProps) {
   const opacity = useRef(new Animated.Value(0.3)).current;
   const scheme = useColorScheme();
   const background = scheme === 'dark' ? '#3a3a3c' : '#e1e1e6';
@@ -33,3 +33,5 @@ export default function Skeleton({ width = '100%', height = 16, style }: Skeleto
     />
   );
 }
+
+export default memo(Skeleton);

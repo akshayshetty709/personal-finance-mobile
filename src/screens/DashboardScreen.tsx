@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import Card from '@/src/components/Card';
+import ErrorState from '@/src/components/ErrorState';
 import ProgressBar from '@/src/components/ProgressBar';
 import Skeleton from '@/src/components/Skeleton';
 import { useUnreadAlerts } from '@/src/context/UnreadAlertsContext';
@@ -88,7 +89,7 @@ function NetWorthCard() {
       {loading && !data ? (
         <Skeleton width="60%" height={32} />
       ) : error ? (
-        <SectionError message="Couldn't load accounts" />
+        <ErrorState message="Couldn’t load accounts." onRetry={() => void reload()} />
       ) : (
         <Text style={[styles.bigValue, { color: colors.text }]}>
           {formatCurrency(sumBalances(data ?? []))}
@@ -116,7 +117,7 @@ function MonthSummaryCard() {
   if (error) {
     return (
       <Card title="This Month">
-        <SectionError message="Couldn't load transactions" />
+        <ErrorState message="Couldn’t load transactions." onRetry={() => void reload()} />
       </Card>
     );
   }
@@ -174,7 +175,7 @@ function BudgetHealthCard() {
           <Skeleton width="100%" height={36} />
         </>
       ) : error ? (
-        <SectionError message="Couldn't load budgets" />
+        <ErrorState message="Couldn’t load budgets." onRetry={() => void reload()} />
       ) : (data ?? []).length === 0 ? (
         <Text style={[styles.muted, { color: colors.text }]}>No budgets yet.</Text>
       ) : (
@@ -232,11 +233,6 @@ function AiSummaryCard() {
       </Card>
     </Pressable>
   );
-}
-
-// ─── shared bits ────────────────────────────────────────────────────────────
-function SectionError({ message }: { message: string }) {
-  return <Text style={styles.errorText}>{message}</Text>;
 }
 
 const styles = StyleSheet.create({
