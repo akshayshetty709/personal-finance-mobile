@@ -46,13 +46,11 @@ pipeline {
                         accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
                         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
-        sh """
-          aws s3 cp ${APK_PATH} \
-          s3://${S3_BUCKET}/releases/Locate360-${BUILD_NUMBER}.apk
-
-          aws s3 cp ${APK_PATH} \
-          s3://${S3_BUCKET}/latest/Locate360-latest.apk
-        """
+           sh """
+                        aws s3 cp ${APK_PATH} s3://${S3_BUCKET}/releases/app-release-${BUILD_NUMBER}.apk
+ 
+                        aws s3 cp ${APK_PATH} s3://${S3_BUCKET}/latest/app-release.apk
+                    """
        }
       }
     }
