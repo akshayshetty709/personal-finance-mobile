@@ -42,7 +42,7 @@ pipeline {
     stage('5. Upload APK to S3') {
       steps {
           withCredentials([
-                    aws(credentialsId: 'AWS-CRED', 
+                    aws(credentialsId: 'AWS-Cred', 
                         accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
                         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
