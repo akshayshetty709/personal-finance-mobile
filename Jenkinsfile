@@ -3,7 +3,7 @@ pipeline {
 
   environment {
     S3_BUCKET = 'andriod-apk11'
-    APK_PATH = 'android/apk/build/outputs/apk/release/app-release.apk'
+    APK_PATH = 'android/app/build/outputs/apk/release/app-release.apk'
     JAVA_HOME= '/usr/lib/jvm/java-1.17.0-openjdk-amd64'
 
   }
