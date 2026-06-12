@@ -32,7 +32,7 @@ pipeline {
         sh '''
           cd android &&
           chmod +x gradlew &&
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease --stacktrace
         '''
       }
     }
