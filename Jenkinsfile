@@ -18,7 +18,8 @@ pipeline {
 
     stage('2. npm install') {
       steps {
-        sh "npm install --legacy-peer-deps"
+        sh "rm -rf node_modules"
+        sh "npm ci"
       }
     }
 
