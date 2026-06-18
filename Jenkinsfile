@@ -35,7 +35,7 @@ pipeline {
         sh '''
           cd android &&
           chmod +x gradlew &&
-          ./gradlew assembleRelease --stacktrace
+          ./gradlew assembleRelease --build-cache --no-daemon --stacktrace
         '''
       }
     }
